@@ -6,6 +6,7 @@ import { Printer, CheckCircle, AlertCircle, Search, FileSpreadsheet, RefreshCw }
 import { useToast } from '../Layout/ToastContext';
 import { database } from '../../services/firebase';
 import { formatearFecha } from '../../utils/calculos';
+import type { Configuracion } from '../../types';
 
 interface RegistroHistorial {
   id: string;
@@ -106,7 +107,12 @@ const Historial: React.FC = () => {
   const [historial, setHistorial] = useState<RegistroHistorial[]>([]);
   const [busqueda, setBusqueda] = useState('');
   const [pagina, setPagina] = useState(1);
-  const [configuracion, setConfiguracion] = useState({ tarifaHora: 1000 });
+  const [configuracion, setConfiguracion] = useState<Configuracion>({
+    tarifaHora: 1000,
+    impresoras: { formatoTicket: {} },
+    impresora: { formatoTicket: {} },
+    formatoTicket: {}
+  });
   const [modalImpresionAbierto, setModalImpresionAbierto] = useState(false);
 
   useEffect(() => {

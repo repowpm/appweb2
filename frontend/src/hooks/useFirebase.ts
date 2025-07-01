@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { onValue, DataSnapshot } from 'firebase/database';
 import { estacionamientosRef, historialRef, configuracionRef, actualizarTarifa } from '../services/firebase';
-import { Espacio, RegistroHistorial, Configuracion } from '../types';
+import type { Espacio, RegistroHistorial, Configuracion } from '../types';
 
 export const useEstacionamientos = () => {
   const [estacionamientos, setEstacionamientos] = useState<Record<string, Espacio>>({});

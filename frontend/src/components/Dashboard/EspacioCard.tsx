@@ -6,12 +6,18 @@ interface EspacioCardProps {
   espacioId: string;
   espacio: any;
   onVerificar?: (espacioId: string) => void;
+  onFinalizar?: (espacioId: string) => Promise<void>;
+  onImprimir?: (espacioId: string) => Promise<void>;
+  procesando?: boolean;
 }
 
 const EspacioCard: React.FC<EspacioCardProps> = ({ 
   espacioId, 
   espacio, 
-  onVerificar 
+  onVerificar,
+  onFinalizar,
+  onImprimir,
+  procesando
 }) => {
   const getEstadoColor = (estado: string) => {
     switch (estado) {

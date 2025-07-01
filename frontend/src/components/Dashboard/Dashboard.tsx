@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { onValue, update, push, ref } from 'firebase/database';
+import { onValue, update, push, ref, child } from 'firebase/database';
 import { estacionamientosRef, historialRef, configuracionRef } from '../../services/firebase';
 import { servicioImpresora } from '../../services/impresora';
 import { calcularMetricas } from '../../utils/calculos';
@@ -158,7 +158,7 @@ const Dashboard: React.FC = () => {
           const ultima = new Date(espacio.ultimaActualizacion);
           const minutos = (ahora.getTime() - ultima.getTime()) / 60000;
           if (minutos > 35 && espacio.estado !== 'VERIFICAR') {
-            update(ref(estacionamientosRef, espacioId), { ...espacio, estado: 'VERIFICAR' });
+            update(child(estacionamientosRef, espacioId), { ...espacio, estado: 'VERIFICAR' });
           }
         }
       });
@@ -239,7 +239,7 @@ const Dashboard: React.FC = () => {
       };
 
       // Actualizar en Firebase
-      await update(ref(estacionamientosRef, espacioId), espacioActualizado);
+      await update(child(estacionamientosRef, espacioId), espacioActualizado);
 
       mostrarNotificacion('success', `⏳ Espacio ${espacioId.toUpperCase()} pendiente - $${costo.toLocaleString('es-CL')}`, true);
       
@@ -322,7 +322,7 @@ const Dashboard: React.FC = () => {
         pendienteTicket: false
       };
 
-      await update(ref(estacionamientosRef, espacioId), espacioLiberado);
+      await update(child(estacionamientosRef, espacioId), espacioLiberado);
 
       mostrarNotificacion('success', `✅ Ticket impreso - $${espacio.costo.toLocaleString('es-CL')} - Disponible en Historial`, true);
       
@@ -344,7 +344,7 @@ const Dashboard: React.FC = () => {
       setNotificacionesDeshabilitadas(true);
       
       // Aquí podrías mostrar un modal o pedir confirmación
-      await update(ref(estacionamientosRef, espacioId), {
+      await update(child(estacionamientosRef, espacioId), {
         estado: 'LIBRE',
         patente: null,
         horaEntrada: null,

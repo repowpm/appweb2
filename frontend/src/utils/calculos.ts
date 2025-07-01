@@ -99,7 +99,7 @@ export const calcularMetricas = (historial: any[]): any => {
 
   const espacioMasUtilizado = usoPorEspacio.length > 0 
     ? usoPorEspacio.reduce((max, actual) => 
-        actual.cantidad > max.cantidad ? actual : max
+        (actual as { cantidad: number }).cantidad > (max as { cantidad: number }).cantidad ? actual : max
       ).espacio
     : '';
 
@@ -113,7 +113,7 @@ export const calcularMetricas = (historial: any[]): any => {
 
   const patentesMasFrecuentes = Object.entries(patentesCount)
     .map(([patente, cantidad]) => ({ patente, cantidad }))
-    .sort((a, b) => b.cantidad - a.cantidad)
+    .sort((a, b) => (b as { cantidad: number }).cantidad - (a as { cantidad: number }).cantidad)
     .slice(0, 5);
 
   // Análisis por día (últimos 30 días)
