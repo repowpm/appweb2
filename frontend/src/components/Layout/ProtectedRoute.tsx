@@ -6,7 +6,17 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ user, children }) => {
-  if (!user || user.email !== 'wal.paredesm@gmail.com') {
+  // Si el usuario aún no está cargado, muestra un loader
+  if (user === undefined || user === null) {
+    return (
+      <div className="flex items-center justify-center h-screen text-xl text-blue-700">
+        Cargando...
+      </div>
+    );
+  }
+
+  // Si el usuario no es el autorizado, muestra acceso restringido
+  if (user.email !== 'wal.paredesm@gmail.com') {
     return (
       <div className="flex flex-col items-center justify-center h-screen">
         <div className="bg-red-100 text-red-700 px-6 py-4 rounded shadow text-lg font-semibold">
@@ -16,6 +26,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ user, children }) => {
       </div>
     );
   }
+
+  // Si el usuario es el autorizado, muestra el contenido
   return <>{children}</>;
 };
 
