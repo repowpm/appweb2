@@ -10,6 +10,7 @@ import Login from './components/Auth/Login';
 import { auth, onAuthStateChanged } from './services/firebase';
 import Toast from './components/Layout/Toast';
 import { ToastContext } from './components/Layout/ToastContext';
+import ProtectedRoute from './components/Layout/ProtectedRoute';
 import './App.css';
 
 function App() {
@@ -48,8 +49,8 @@ function App() {
             ) : (
               <>
                 <Route path="/" element={<Layout><Dashboard /></Layout>} />
-                <Route path="/historial" element={<Layout><Historial /></Layout>} />
-                <Route path="/configuracion" element={<Layout><Configuracion /></Layout>} />
+                <Route path="/historial" element={<Layout><ProtectedRoute user={user}><Historial /></ProtectedRoute></Layout>} />
+                <Route path="/configuracion" element={<Layout><ProtectedRoute user={user}><Configuracion /></ProtectedRoute></Layout>} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </>
             )}
