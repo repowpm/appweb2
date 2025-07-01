@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Escudo azul -->
+  <path d="M16 2L4 8v8c0 8 6 14 12 18s12-10 12-18V8L16 2z" fill="#2563eb"/>
+  
+  <!-- E blanca -->
+  <path d="M12 10h8v2h-6v3h5v2h-5v3h6v2h-8V10z" fill="white"/>
+</svg> 
