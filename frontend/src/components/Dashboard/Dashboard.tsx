@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { onValue, update, push, ref, child } from 'firebase/database';
+import { onValue, update, push, ref, child, getDatabase } from 'firebase/database';
 import { estacionamientosRef, historialRef, configuracionRef } from '../../services/firebase';
 import { servicioImpresora } from '../../services/impresora';
 import { calcularMetricas } from '../../utils/calculos';
@@ -22,6 +22,7 @@ const Dashboard: React.FC = () => {
   const [notificacionesDeshabilitadas, setNotificacionesDeshabilitadas] = useState(false);
   const notificacionesRecientes = useRef<Set<string>>(new Set());
   const timeoutNotificaciones = useRef<NodeJS.Timeout | null>(null);
+  const db = getDatabase();
 
   // Función para limpiar notificaciones recientes después de un delay
   const limpiarNotificacionesRecientes = () => {
@@ -158,7 +159,7 @@ const Dashboard: React.FC = () => {
           const ultima = new Date(espacio.ultimaActualizacion);
           const minutos = (ahora.getTime() - ultima.getTime()) / 60000;
           if (minutos > 35 && espacio.estado !== 'VERIFICAR') {
-            update(child(estacionamientosRef, espacioId), { ...espacio, estado: 'VERIFICAR' });
+            update(ref(db, `estacionamientos/${espacioId}`), { estado: 'VERIFICAR' });
           }
         }
       });
@@ -239,7 +240,13 @@ const Dashboard: React.FC = () => {
       };
 
       // Actualizar en Firebase
-      await update(child(estacionamientosRef, espacioId), espacioActualizado);
+      await update(ref(db, `estacionamientos/${espacioId}`), {
+        estado: 'PENDIENTE',
+        horaSalida,
+        tiempoOcupado,
+        costo,
+        pendienteTicket: true
+      });
 
       mostrarNotificacion('success', `⏳ Espacio ${espacioId.toUpperCase()} pendiente - $${costo.toLocaleString('es-CL')}`, true);
       
@@ -312,17 +319,16 @@ const Dashboard: React.FC = () => {
       await push(historialRef, registroHistorial);
 
       // Liberar el espacio (volver a LIBRE)
-      const espacioLiberado = {
+      await update(ref(db, `estacionamientos/${espacioId}`), {
         estado: 'LIBRE',
         patente: null,
         horaEntrada: null,
         horaSalida: null,
         tiempoOcupado: null,
         costo: null,
-        pendienteTicket: false
-      };
-
-      await update(child(estacionamientosRef, espacioId), espacioLiberado);
+        pendienteTicket: false,
+        ultimaActualizacion: new Date().toISOString()
+      });
 
       mostrarNotificacion('success', `✅ Ticket impreso - $${espacio.costo.toLocaleString('es-CL')} - Disponible en Historial`, true);
       
@@ -344,7 +350,7 @@ const Dashboard: React.FC = () => {
       setNotificacionesDeshabilitadas(true);
       
       // Aquí podrías mostrar un modal o pedir confirmación
-      await update(child(estacionamientosRef, espacioId), {
+      await update(ref(db, `estacionamientos/${espacioId}`), {
         estado: 'LIBRE',
         patente: null,
         horaEntrada: null,

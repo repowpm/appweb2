@@ -20,9 +20,9 @@ export interface RegistroHistorial {
 
 export interface Configuracion {
   tarifaHora: number;
-  impresoras?: { formatoTicket?: { encabezado?: string; piePagina?: string } };
-  impresora?: { formatoTicket?: { encabezado?: string; piePagina?: string } };
-  formatoTicket?: { encabezado?: string; piePagina?: string };
+  impresoras?: any;
+  impresora?: any;
+  formatoTicket?: any;
 }
 
 export interface Metricas {

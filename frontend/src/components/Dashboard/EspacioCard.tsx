@@ -5,7 +5,7 @@ import { formatearTiempo, formatearPrecio } from '../../utils/calculos';
 interface EspacioCardProps {
   espacioId: string;
   espacio: any;
-  onVerificar?: (espacioId: string) => void;
+  onVerificar?: (espacioId: string) => Promise<void>;
   onFinalizar?: (espacioId: string) => Promise<void>;
   onImprimir?: (espacioId: string) => Promise<void>;
   procesando?: boolean;
