@@ -15,7 +15,9 @@ export interface RegistroHistorial {
   horaSalida: string;
   tiempoOcupado: number;
   costo: number;
+  fecha: string;
   timestamp: number;
+  estado?: 'PENDIENTE' | 'FINALIZADO' | 'COMPLETADO';
 }
 
 export interface Configuracion {

@@ -305,6 +305,7 @@ const Dashboard: React.FC = () => {
       servicioImpresora.imprimirTicket(datosTicket);
 
       // Agregar al historial
+      const timestamp = Date.now();
       const registroHistorial = {
         espacio: espacioId.toUpperCase(),
         patente: espacio.patente,
@@ -313,7 +314,8 @@ const Dashboard: React.FC = () => {
         tiempoOcupado: espacio.tiempoOcupado,
         costo: espacio.costo,
         fecha: new Date().toISOString(),
-        estado: 'COMPLETADO'
+        timestamp: timestamp, // Agregar timestamp para ordenamiento consistente
+        estado: 'FINALIZADO'
       };
 
       await push(historialRef, registroHistorial);

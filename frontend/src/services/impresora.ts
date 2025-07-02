@@ -884,33 +884,7 @@ ${ticket}
     }
   }
 
-  // Verificar conexión automáticamente cada cierto tiempo
-  public iniciarVerificacionAutomatica(intervaloMinutos: number = 5): void {
-    // Limpiar intervalo anterior si existe
-    if (this.intervaloVerificacion) {
-      clearInterval(this.intervaloVerificacion);
-    }
 
-    // Iniciar nuevo intervalo
-    this.intervaloVerificacion = setInterval(() => {
-      this.validarConexion().catch(error => {
-        console.error('Error en verificación automática:', error);
-      });
-    }, intervaloMinutos * 60 * 1000);
-
-    console.log(`Verificación automática iniciada cada ${intervaloMinutos} minutos`);
-  }
-
-  // Detener verificación automática
-  public detenerVerificacionAutomatica(): void {
-    if (this.intervaloVerificacion) {
-      clearInterval(this.intervaloVerificacion);
-      this.intervaloVerificacion = null;
-      console.log('Verificación automática detenida');
-    }
-  }
-
-  private intervaloVerificacion: NodeJS.Timeout | null = null;
 
   public async validarConexion(): Promise<{ exito: boolean; mensaje: string }> {
     if (!this.configuracion) {
@@ -967,6 +941,8 @@ ${ticket}
       return { exito: false, mensaje: 'Error al enviar comando de corte.' };
     }
   }
+
+
 }
 
 // Instancia global del servicio

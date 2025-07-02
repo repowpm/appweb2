@@ -42,8 +42,50 @@ export const useHistorial = () => {
         if (data) {
           const historialArray = Object.entries(data).map(([id, registro]) => ({
             id,
-            ...(registro as Omit<RegistroHistorial, 'id'>)
-          }));
+            ...(registro as Omit<RegistroHistorial, 'id'>),
+            estado: (registro as any).estado?.toUpperCase() === 'COMPLETADO' ? 'FINALIZADO' : (registro as any).estado?.toUpperCase() || 'PENDIENTE' // Normalizar estados
+          })).sort((a, b) => {
+            // Función para obtener timestamp de ordenamiento
+            const getTimestamp = (registro: any): number => {
+              // 1. Usar timestamp si existe (más confiable)
+              if (registro.timestamp && typeof registro.timestamp === 'number') {
+                return registro.timestamp;
+              }
+              
+              // 2. Intentar usar fecha si existe y es válida
+              if (registro.fecha) {
+                const fecha = new Date(registro.fecha);
+                if (!isNaN(fecha.getTime())) {
+                  return fecha.getTime();
+                }
+              }
+              
+              // 3. Intentar usar timestampSalida si existe
+              if (registro.timestampSalida) {
+                const fecha = new Date(registro.timestampSalida);
+                if (!isNaN(fecha.getTime())) {
+                  return fecha.getTime();
+                }
+              }
+              
+              // 4. Intentar extraer timestamp del ID si es un timestamp válido
+              if (registro.id && registro.id.length > 10) {
+                const posibleTimestamp = parseInt(registro.id);
+                if (!isNaN(posibleTimestamp) && posibleTimestamp > 1000000000000) {
+                  return posibleTimestamp;
+                }
+              }
+              
+              // 5. Si no hay nada válido, usar 0 (aparecerá al final)
+              return 0;
+            };
+            
+            const timestampA = getTimestamp(a);
+            const timestampB = getTimestamp(b);
+            
+            // Ordenar de más reciente a más antiguo
+            return timestampB - timestampA;
+          });
           setHistorial(historialArray);
         } else {
           setHistorial([]);

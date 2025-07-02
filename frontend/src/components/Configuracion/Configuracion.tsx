@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { onValue, ref, set, get, update } from 'firebase/database';
 import { database } from '../../services/firebase';
-import { Printer, Settings, Save, DollarSign, X, RefreshCw, Thermometer, Monitor as MonitorIcon } from 'lucide-react';
+import { Printer, Settings, Save, DollarSign, X, RefreshCw, Thermometer } from 'lucide-react';
 import { useToast } from '../Layout/ToastContext';
 import { servicioImpresora } from '../../services/impresora';
 
@@ -12,7 +12,6 @@ const Configuracion: React.FC = () => {
   const [guardando, setGuardando] = useState(false);
   const [validandoConexion, setValidandoConexion] = useState(false);
   const [probandoConexion, setProbandoConexion] = useState(false);
-  const [verificacionAutomatica, setVerificacionAutomatica] = useState(false);
   const [probandoCorte, setProbandoCorte] = useState(false);
   
   // Estado de configuración de impresora térmica
@@ -197,17 +196,7 @@ const Configuracion: React.FC = () => {
     }
   };
 
-  const handleVerificacionAutomatica = () => {
-    if (verificacionAutomatica) {
-      servicioImpresora.detenerVerificacionAutomatica();
-      setVerificacionAutomatica(false);
-      showToast('info', 'Verificación automática detenida');
-    } else {
-      servicioImpresora.iniciarVerificacionAutomatica(5);
-      setVerificacionAutomatica(true);
-      showToast('success', 'Verificación automática iniciada cada 5 minutos');
-    }
-  };
+
 
   return (
     <div className="max-w-3xl mx-auto p-4">
@@ -528,19 +517,7 @@ const Configuracion: React.FC = () => {
                       </button>
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Verificación automática</span>
-                      <button
-                        onClick={handleVerificacionAutomatica}
-                        className={`px-3 py-1 rounded-md text-sm font-medium ${
-                          verificacionAutomatica
-                            ? 'bg-red-100 text-red-800 hover:bg-red-200'
-                            : 'bg-green-100 text-green-800 hover:bg-green-200'
-                        }`}
-                      >
-                        {verificacionAutomatica ? 'Detener' : 'Iniciar'}
-                      </button>
-                    </div>
+
                   </div>
 
                   {/* Botones de acción */}
@@ -572,6 +549,8 @@ const Configuracion: React.FC = () => {
           </div>
         )}
       </div>
+
+
 
       {/* Acordeón: Tarifa por hora */}
       <div className="mb-4 border rounded-lg overflow-hidden">
