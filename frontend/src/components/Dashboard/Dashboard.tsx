@@ -301,38 +301,177 @@ const Dashboard: React.FC = () => {
         fecha: new Date().toLocaleDateString('es-CL')
       };
 
-      // Imprimir ticket
-      servicioImpresora.imprimirTicket(datosTicket);
+      // Crear ventana de impresión con verificación
+      const ticketHtml = `
+        <html>
+        <head>
+          <title>Ticket - ${datosTicket.espacio}</title>
+          <style>
+            body { font-family: 'Courier New', monospace; font-size: 14px; margin: 0; padding: 20px; }
+            .ticket { max-width: 320px; margin: 0 auto; }
+            .centrado { text-align: center; }
+            .separador { border-top: 1px dashed #000; margin: 10px 0; }
+            strong { font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <div class="ticket">
+            <div class="separador"></div>
+            <div class="centrado"><strong>TICKET DE ESTACIONAMIENTO</strong></div>
+            <div class="separador"></div>
+            <div><strong>Espacio:</strong> <strong>${datosTicket.espacio}</strong></div>
+            <div><strong>Patente:</strong> <strong>${datosTicket.patente}</strong></div>
+            <div><strong>Hora Entrada:</strong> <strong>${datosTicket.horaEntrada}</strong></div>
+            <div><strong>Hora Salida:</strong> <strong>${datosTicket.horaSalida}</strong></div>
+            <div><strong>Tiempo Total:</strong> <strong>${datosTicket.tiempoTotal}</strong></div>
+            <div><strong>Tarifa por Hora:</strong> <strong>$${datosTicket.tarifaHora?.toLocaleString('es-CL')}</strong></div>
+            <div><strong>Costo Total:</strong> <strong>$${datosTicket.costoTotal?.toLocaleString('es-CL')}</strong></div>
+            <div class="separador"></div>
+            <div><strong>Fecha:</strong></div>
+            <div><strong>${datosTicket.fecha}</strong></div>
+            <div class="centrado" style="margin-top:10px;"><strong>¡GRACIAS POR SU VISITA!</strong></div>
+            <div class="separador"></div>
+          </div>
+          
+          <!-- Botones de confirmación -->
+          <div style="margin-top: 20px; text-align: center; padding: 10px; border-top: 1px solid #ccc;">
+            <p style="margin-bottom: 10px; font-size: 12px; color: #666;">
+              ¿Se imprimió correctamente el ticket?
+            </p>
+            <button onclick="confirmarImpresion()" style="background: #28a745; color: white; border: none; padding: 8px 16px; margin-right: 10px; border-radius: 4px; cursor: pointer;">
+              ✅ Sí, se imprimió
+            </button>
+            <button onclick="cancelarImpresion()" style="background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+              ❌ No, cancelé
+            </button>
+          </div>
+          <script>
+            let impresionConfirmada = false;
+            let ventanaCerrada = false;
+            
+            // Función para enviar mensaje de cancelación
+            function enviarCancelacion() {
+              if (window.opener && !impresionConfirmada) {
+                window.opener.postMessage({ tipo: 'impresion_cancelada', espacioId: '${espacioId}' }, '*');
+              }
+            }
+            
+            // Función para enviar mensaje de impresión exitosa
+            function enviarExito() {
+              if (window.opener) {
+                window.opener.postMessage({ tipo: 'ticket_impreso', espacioId: '${espacioId}' }, '*');
+              }
+            }
+            
+            // Función para confirmar impresión manualmente
+            function confirmarImpresion() {
+              if (!impresionConfirmada) {
+                impresionConfirmada = true;
+                console.log('Impresión confirmada manualmente');
+                enviarExito();
+                setTimeout(function() {
+                  window.close();
+                }, 500);
+              }
+            }
+            
+            // Función para cancelar impresión manualmente
+            function cancelarImpresion() {
+              if (!impresionConfirmada) {
+                console.log('Impresión cancelada manualmente');
+                enviarCancelacion();
+                window.close();
+              }
+            }
+            
+            window.onload = function() {
+              // Pequeño delay para asegurar que todo esté listo
+              setTimeout(function() {
+                window.print();
+              }, 100);
+            };
+            
+            // Detectar cuando se cierra la ventana
+            window.addEventListener('beforeunload', function() {
+              ventanaCerrada = true;
+              if (!impresionConfirmada) {
+                console.log('Ventana cerrada sin confirmar impresión');
+                enviarCancelacion();
+              }
+            });
+            
+            // Timeout de seguridad
+            setTimeout(function() {
+              if (!impresionConfirmada && !ventanaCerrada) {
+                console.log('Timeout - asumiendo cancelación');
+                enviarCancelacion();
+                window.close();
+              }
+            }, 30000);
+          </script>
+        </body>
+        </html>
+      `;
 
-      // Agregar al historial
-      const timestamp = Date.now();
-      const registroHistorial = {
-        espacio: espacioId.toUpperCase(),
-        patente: espacio.patente,
-        horaEntrada: espacio.horaEntrada,
-        horaSalida: espacio.horaSalida,
-        tiempoOcupado: espacio.tiempoOcupado,
-        costo: espacio.costo,
-        fecha: new Date().toISOString(),
-        timestamp: timestamp, // Agregar timestamp para ordenamiento consistente
-        estado: 'FINALIZADO'
+      // Abrir ventana emergente
+      const printWindow = window.open('', '_blank', 'width=400,height=600');
+      if (printWindow) {
+        printWindow.document.open();
+        printWindow.document.write(ticketHtml);
+        printWindow.document.close();
+      } else {
+        mostrarNotificacion('error', 'No se pudo abrir la ventana de impresión.', true);
+        return;
+      }
+
+      // Escuchar el mensaje de la ventana emergente
+      const onTicketImpreso = async (event: MessageEvent) => {
+        if (event.data && event.data.espacioId === espacioId) {
+          if (event.data.tipo === 'ticket_impreso') {
+            // Solo guardar en historial y liberar espacio si realmente se imprimió
+            const timestamp = Date.now();
+            const registroHistorial = {
+              espacio: espacioId.toUpperCase(),
+              patente: espacio.patente,
+              horaEntrada: espacio.horaEntrada,
+              horaSalida: espacio.horaSalida,
+              tiempoOcupado: espacio.tiempoOcupado,
+              costo: espacio.costo,
+              fecha: new Date().toISOString(),
+              timestamp: timestamp,
+              estado: 'FINALIZADO'
+            };
+
+            await push(historialRef, registroHistorial);
+
+            // Liberar el espacio (volver a LIBRE)
+            await update(ref(db, `estacionamientos/${espacioId}`), {
+              estado: 'LIBRE',
+              patente: null,
+              horaEntrada: null,
+              horaSalida: null,
+              tiempoOcupado: null,
+              costo: null,
+              pendienteTicket: false,
+              ultimaActualizacion: new Date().toISOString()
+            });
+
+            mostrarNotificacion('success', `✅ Ticket impreso - $${espacio.costo.toLocaleString('es-CL')} - Disponible en Historial`, true);
+          } else if (event.data.tipo === 'impresion_cancelada') {
+            // Mostrar mensaje si se canceló la impresión
+            mostrarNotificacion('info', 'Impresión cancelada. El espacio permanece pendiente.', true);
+          }
+          window.removeEventListener('message', onTicketImpreso);
+          clearTimeout(timeoutId);
+        }
       };
-
-      await push(historialRef, registroHistorial);
-
-      // Liberar el espacio (volver a LIBRE)
-      await update(ref(db, `estacionamientos/${espacioId}`), {
-        estado: 'LIBRE',
-        patente: null,
-        horaEntrada: null,
-        horaSalida: null,
-        tiempoOcupado: null,
-        costo: null,
-        pendienteTicket: false,
-        ultimaActualizacion: new Date().toISOString()
-      });
-
-      mostrarNotificacion('success', `✅ Ticket impreso - $${espacio.costo.toLocaleString('es-CL')} - Disponible en Historial`, true);
+      window.addEventListener('message', onTicketImpreso);
+      
+      // Timeout de seguridad: si no se recibe mensaje en 30 segundos, asumir que se canceló
+      const timeoutId = setTimeout(() => {
+        window.removeEventListener('message', onTicketImpreso);
+        mostrarNotificacion('info', 'Tiempo de espera agotado. El espacio permanece pendiente.', true);
+      }, 30000);
       
     } catch (error) {
       mostrarNotificacion('error', 'Error al imprimir el ticket o guardar en el historial.', true);

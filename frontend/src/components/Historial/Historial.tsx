@@ -269,16 +269,82 @@ const Historial: React.FC = () => {
             <div class="centrado" style="margin-top:10px;"><strong>${piePaginaHtml}</strong></div>
             <div class="separador"></div>
           </div>
+          
+          <!-- Botones de confirmación -->
+          <div style="margin-top: 20px; text-align: center; padding: 10px; border-top: 1px solid #ccc;">
+            <p style="margin-bottom: 10px; font-size: 12px; color: #666;">
+              ¿Se imprimió correctamente el ticket?
+            </p>
+            <button onclick="confirmarImpresion()" style="background: #28a745; color: white; border: none; padding: 8px 16px; margin-right: 10px; border-radius: 4px; cursor: pointer;">
+              ✅ Sí, se imprimió
+            </button>
+            <button onclick="cancelarImpresion()" style="background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+              ❌ No, cancelé
+            </button>
+          </div>
           <script>
-            window.onload = function() {
-              window.print();
-            };
-            window.onafterprint = function() {
+            let impresionConfirmada = false;
+            let ventanaCerrada = false;
+            
+            // Función para enviar mensaje de cancelación
+            function enviarCancelacion() {
+              if (window.opener && !impresionConfirmada) {
+                window.opener.postMessage({ tipo: 'impresion_cancelada', id: '${registro.id}' }, '*');
+              }
+            }
+            
+            // Función para enviar mensaje de impresión exitosa
+            function enviarExito() {
               if (window.opener) {
                 window.opener.postMessage({ tipo: 'ticket_impreso', id: '${registro.id}' }, '*');
               }
-              window.close();
+            }
+            
+            // Función para confirmar impresión manualmente
+            function confirmarImpresion() {
+              if (!impresionConfirmada) {
+                impresionConfirmada = true;
+                console.log('Impresión confirmada manualmente');
+                enviarExito();
+                setTimeout(function() {
+                  window.close();
+                }, 500);
+              }
+            }
+            
+            // Función para cancelar impresión manualmente
+            function cancelarImpresion() {
+              if (!impresionConfirmada) {
+                console.log('Impresión cancelada manualmente');
+                enviarCancelacion();
+                window.close();
+              }
+            }
+            
+            window.onload = function() {
+              // Pequeño delay para asegurar que todo esté listo
+              setTimeout(function() {
+                window.print();
+              }, 100);
             };
+            
+            // Detectar cuando se cierra la ventana
+            window.addEventListener('beforeunload', function() {
+              ventanaCerrada = true;
+              if (!impresionConfirmada) {
+                console.log('Ventana cerrada sin confirmar impresión');
+                enviarCancelacion();
+              }
+            });
+            
+            // Timeout de seguridad
+            setTimeout(function() {
+              if (!impresionConfirmada && !ventanaCerrada) {
+                console.log('Timeout - asumiendo cancelación');
+                enviarCancelacion();
+                window.close();
+              }
+            }, 30000);
           </script>
         </body>
         </html>
@@ -297,24 +363,37 @@ const Historial: React.FC = () => {
 
       // Escuchar el mensaje de la ventana emergente para actualizar el estado SOLO después de imprimir
       const onTicketImpreso = async (event: MessageEvent) => {
-        if (event.data && event.data.tipo === 'ticket_impreso' && event.data.id === registro.id) {
-          if (registro.estado === 'PENDIENTE') {
-            await actualizarEstadoHistorial(registro.id, 'FINALIZADO');
-            setHistorial(prevHistorial =>
-              prevHistorial.map(item =>
-                item.id === registro.id
-                  ? { ...item, estado: 'FINALIZADO' }
-                  : item
-              )
-            );
-            showToast('success', 'Ticket impreso correctamente y estado actualizado a FINALIZADO.');
-          } else {
-            showToast('success', 'Ticket reimpreso correctamente.');
+        if (event.data && event.data.id === registro.id) {
+          if (event.data.tipo === 'ticket_impreso') {
+            // Solo actualizar estado si realmente se imprimió
+            if (registro.estado === 'PENDIENTE') {
+              await actualizarEstadoHistorial(registro.id, 'FINALIZADO');
+              setHistorial(prevHistorial =>
+                prevHistorial.map(item =>
+                  item.id === registro.id
+                    ? { ...item, estado: 'FINALIZADO' }
+                    : item
+                )
+              );
+              showToast('success', 'Ticket impreso correctamente y estado actualizado a FINALIZADO.');
+            } else {
+              showToast('success', 'Ticket reimpreso correctamente.');
+            }
+          } else if (event.data.tipo === 'impresion_cancelada') {
+            // Mostrar mensaje si se canceló la impresión
+            showToast('info', 'Impresión cancelada. El estado del ticket no se ha modificado.');
           }
           window.removeEventListener('message', onTicketImpreso);
+          clearTimeout(timeoutId);
         }
       };
       window.addEventListener('message', onTicketImpreso);
+      
+      // Timeout de seguridad: si no se recibe mensaje en 30 segundos, asumir que se canceló
+      const timeoutId = setTimeout(() => {
+        window.removeEventListener('message', onTicketImpreso);
+        showToast('info', 'Tiempo de espera agotado. El estado del ticket no se ha modificado.');
+      }, 30000);
     } catch (error) {
       console.error('Error al imprimir:', error);
       showToast('error', 'Error al imprimir el ticket.');
